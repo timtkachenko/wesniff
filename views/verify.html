@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<script src='https://cdn.veriff.me/sdk/js/1.1/veriff.min.js'></script>
+<script src='https://cdn.veriff.me/incontext/js/v1/veriff.js'></script>
+
+<div id='veriff-root'></div>
+<script>
+    const veriff = Veriff({
+        host: 'https://stationapi.veriff.com',
+        apiKey: '4a27b979-229d-44e8-91d0-b6b94f9ab231',
+        parentId: 'veriff-root',
+        onSession: function(err, response) {
+            window.veriffSDK.createVeriffFrame({ url: response.verification.url });
+        }
+    });
+    veriff.setParams({
+        person: {
+            givenName: ' ',
+            lastName: ' '
+        },
+        vendorData: ' '
+    });
+    veriff.mount();
+</script>
+</body>
+</html>

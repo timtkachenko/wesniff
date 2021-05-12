@@ -1,0 +1,306 @@
+swagger: "2.0"
+info:
+  version: "0.0.1"
+  title: wesniff
+  description: api server
+
+securityDefinitions:
+  Bearer:
+    type: apiKey
+    name: Authorization
+    in: header
+  ApiKey:
+    type: apiKey
+    name: 'x-auth-client'
+    in: header
+
+security:
+  - Bearer: []
+
+basePath: /api
+
+schemes:
+  - http
+
+consumes:
+  - application/json
+
+produces:
+  - application/json
+
+paths:
+  /health:
+    x-swagger-router-controller: health
+    get:
+      security: []
+      description: Healtcheck function
+      operationId: health
+      responses:
+        "200":
+          description: Success
+          schema:
+            type: string
+
+#######
+  '/users':
+    get:
+      x-security-scopes:
+      security: []
+      summary: get Users
+      tags:
+        - users
+      operationId: getUsers
+      parameters:
+        - name: limit
+          in: query
+          type: array
+          description: ?limit=10,20
+          items:
+            type: integer
+      responses:
+        "200":
+          description: Success
+          schema:
+            type: object
+            properties:
+              code:
+                $ref: "#/definitions/SuccessCode"
+              data:
+                type: array
+                items:
+                  $ref: '#/definitions/UserDto'
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/Error"
+    post:
+      security: []
+      consumes:
+        - multipart/form-data
+      summary: create User
+      tags:
+        - users
+      operationId: createUser
+      parameters:
+        - in: formData
+          name: image
+          type: file
+          required: true
+          description: Create User
+        - in: formData
+          name: email
+          type: string
+          required: true
+          description: email
+      responses:
+        "200":
+          description: Success
+          schema:
+            type: object
+            properties:
+              code:
+                $ref: "#/definitions/SuccessCode"
+              data:
+                $ref: '#/definitions/UserDto'
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/Error"
+##################
+  '/events':
+    post:
+      security:
+        - ApiKey: []
+      summary: accept callbacks
+      tags:
+        - events
+      operationId: callbackHandle
+
+      parameters:
+        - in: body
+          name: body
+          required: true
+          description: message and list of multiple queues
+          schema:
+            $ref: '#/definitions/EventBaseDto'
+      responses:
+        "200":
+          description: Success
+          schema:
+            type: object
+            properties:
+              code:
+                $ref: "#/definitions/SuccessCode"
+              data:
+                type: object
+                properties:
+                  status:
+                    type: string
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/Error"
+
+definitions:
+  SuccessCode:
+    description: Status message for successful request
+    type: number
+    example: 1
+
+  Error:
+    type: object
+    properties:
+      message:
+        type: string
+
+##########################
+  UserBase:
+    type: object
+    discriminator: UserBase
+    properties:
+      role:
+        type: string
+        description: user role
+        default: admin
+        enum:
+          - admin
+          - member
+
+  UserDto:
+    type: object
+    allOf:
+      - $ref: '#/definitions/UserBase'
+      - properties:
+          id:
+            description: user id
+            type: string
+            x-omitempty: false
+          email:
+            type: string
+            description: email
+            x-omitempty: false
+
+  UserCreateDto:
+    type: object
+    allOf:
+      - $ref: '#/definitions/UserBase'
+      - properties:
+          email:
+            type: string
+            description: email
+            format: email
+            x-go-name: email
+            x-go-custom-tag: 'valid:"email"'
+        required:
+          - email
+
+  UserUpdateDto:
+    type: object
+    allOf:
+      - $ref: '#/definitions/UserBase'
+#############
+  EventBase:
+    type: object
+    discriminator: EventBase
+    properties:
+      status:
+        type: string
+      verification:
+        $ref: "#/definitions/Verification"
+  EventBaseDto:
+    type: object
+    allOf:
+      - $ref: '#/definitions/EventBase'
+  #############
+  Verification:
+    type: object
+    properties:
+        id:
+          type: string
+        code:
+          type: integer
+        person:
+          $ref: "#/definitions/Person"
+        reason:
+          type: string
+        status:
+          type: string
+        comments:
+          type: array
+          items:
+            type: string
+        document:
+          $ref: "#/definitions/Document"
+        reasonCode:
+          type: string
+        vendorData:
+          type: string
+        decisionTime:
+          type: string
+        acceptanceTime:
+          type: string
+        additionalVerifiedData:
+          $ref: "#/definitions/AdditionalVerifiedData"
+        riskLabels:
+          type: array
+          items:
+            $ref: "#/definitions/RiskLabel"
+        technicalData:
+          type: object
+          properties:
+            ip:
+              type: string
+  #############
+  AdditionalVerifiedData:
+    type: object
+    properties:
+        driversLicenseCategory:
+          type: object
+          properties:
+              B:
+                type: boolean
+  RiskLabel:
+    type: object
+    properties:
+      label:
+        type: string
+      category:
+        type: string
+  #############
+  Person:
+    type: object
+    properties:
+        gender:
+          type: string
+        idNumber:
+          type: string
+        lastName:
+          type: string
+        firstName:
+          type: string
+        citizenship:
+          type: string
+        dateOfBirth:
+          type: string
+        nationality:
+          type: string
+        yearOfBirth:
+          type: string
+        placeOfBirth:
+          type: string
+        pepSanctionMatch:
+          type: string
+  #############
+  Document:
+    type: object
+    properties:
+      type:
+        type: string
+      number:
+        type: string
+      country:
+        type: string
+      validFrom:
+        type: string
+      validUntil:
+        type: string
